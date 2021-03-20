@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
+from .forms import TodoForm
 
 
 def home(request):
@@ -10,19 +11,21 @@ def home(request):
 
 
 def login_user(request):
+	login_error = 'Autenticacion fallida!'
 	if request.method == 'GET':
 		return render(request, 'todo/signup_user.html', {'form': AuthenticationForm()})
 	else:
 		user = authenticate(request, username=request.POST['username'],password=request.POST['password'])
 		if user is None:
-			return render(request, 'todo/signup_user.html', {'form': AuthenticationForm(), 'error': 'Autenticacion fallida!'})
+			return render(request, 'todo/signup_user.html', {'form': AuthenticationForm(), 'error': login_error})
 		else:
 			login(request, user)
 			return redirect('current_todos')
-			
-
+	
 
 def signup_user(request):
+	msg_integrity = 'Error con nombre de usuario repetido'
+	msg_password_error = 'Password no son iguales'
 	if request.method == 'GET':
 		return render(request, 'todo/signup_user.html', {'form': UserCreationForm()})
 	else:
@@ -35,10 +38,9 @@ def signup_user(request):
 				login(request, user)
 				return redirect('current_todos')
 			except IntegrityError:
-				return render(request, 'todo/signup_user.html',
-				              {'form': UserCreationForm(), 'error': 'Error con nombre de usuario repetido'})
+				return render(request, 'todo/signup_user.html', {'form': UserCreationForm(), 'error': msg_integrity})
 		else:
-			return render(request, 'todo/signup_user.html', {'form': UserCreationForm(), 'error': 'Password no son iguales'})
+			return render(request, 'todo/signup_user.html', {'form': UserCreationForm(), 'error': msg_password_error})
 
 
 def current_todos(request):
@@ -49,3 +51,18 @@ def logout_user(request):
 	if request.method == 'POST':
 		logout(request)
 		return redirect('home')
+
+
+def create_todo(request):
+	if request.method == 'GET':
+		return render(request, 'todo/create_todo.html', {'form': TodoForm()})
+	else:
+		try:
+			form = TodoForm(request.POST)
+			new_todo = form.save(commit=False)  # Crea el objeto pero no guarda.
+			new_todo.user = request.user
+			new_todo.save()
+		except ValueError:
+			return render(request, 'todo/create_todo.html', {'form': TodoForm(), 'error': 'Bad Data'})
+		return redirect('current_todos')
+
