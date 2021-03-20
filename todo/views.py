@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from .forms import TodoForm
+from .models import Todo
 
 
 def home(request):
@@ -44,7 +45,8 @@ def signup_user(request):
 
 
 def current_todos(request):
-	return render(request, 'todo/current_todos.html')
+	todos = Todo.objects.filter(user=request.user, date_completed__isnull=True)
+	return render(request, 'todo/current_todos.html', {'todos': todos})
 
 
 def logout_user(request):
@@ -60,8 +62,8 @@ def create_todo(request):
 		try:
 			form = TodoForm(request.POST)
 			new_todo = form.save(commit=False)  # Crea el objeto pero no guarda.
-			new_todo.user = request.user
-			new_todo.save()
+			new_todo.user = request.user  # asigna el usuario y espera para guardar en la siguiente linea
+			new_todo.save()  # guarda el objeto Todo con el usuario creado.
 		except ValueError:
 			return render(request, 'todo/create_todo.html', {'form': TodoForm(), 'error': 'Bad Data'})
 		return redirect('current_todos')

@@ -4,4 +4,8 @@
 
     <h1>Listado de todos</h1>
 
+    {% for todo in todos %}
+        <li>{{ todo.title }}</li>
+    {% endfor %}
+
 {% endblock %}
