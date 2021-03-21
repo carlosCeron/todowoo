@@ -1,5 +1,5 @@
 from django.db import IntegrityError
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
@@ -67,4 +67,18 @@ def create_todo(request):
 		except ValueError:
 			return render(request, 'todo/create_todo.html', {'form': TodoForm(), 'error': 'Bad Data'})
 		return redirect('current_todos')
+
+
+def view_todo(request, todo_pk):
+	todo = get_object_or_404(Todo, pk=todo_pk, user=request.user)
+	if request.method == 'GET':
+		form = TodoForm(instance=todo)
+		return render(request, 'todo/view_todo.html', {'todo': todo, 'form': form})
+	else:
+		try:
+			form = TodoForm(request.POST, instance=todo)
+			form.save()
+			return redirect('current_todos')
+		except ValueError:
+			return render(request, 'todo/view_todo.html', {'todo': todo, 'error': 'Ocurrio un error al actualizar'})
 
